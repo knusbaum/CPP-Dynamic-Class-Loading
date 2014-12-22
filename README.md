@@ -13,10 +13,10 @@ The shared object must contain implementations of the `create` and `destroy` fun
 These functions are responsible for creating and destroying instances of the loaded class. `DLClass` returns a `std::shared_ptr<T>`
 with destroy given to it as the destructor function, so it's safe to let the shared_ptr go out of scope (it'll correctly destroy the object)
 
-Unfortunately, the instance of `DLClass` that created the object must remain alive until the objects it created are destroyed.
-This is necessary, because the `DLClass` instance is responsible for maintaining the handle to the shared object file. When a `DLClass`
-is destroyed, it closes the handle, and the `destroy` function pointers become invalid. If a loaded object instance tries to destroy
-itself after the `DLClass` has been destroyed, it'll segfault when it tries to execute the `destroy` function.
+The instance of `DLClass` that created the object need not remain alive until the objects it created are destroyed.
+`DLClass` maintains a shared_ptr to a 'shared library' object responsible for closing the dynamic library. When a shared object handle is closed, the `destroy` function pointers become invalid. If a loaded object instance tries to destroy
+itself after the handle has been closed, it'll segfault when it tries to execute the `destroy` function.
+Each created object also maintains a shared_ptr to the 'shared library' object, so only once all created objects and the `DLClass` instance have been destroyed does the 'shared library' object get destroyed. The destructor of the 'shared library' object closes the handle.
 
 I read about loading C++ classes from shared objects [here](http://tldp.org/HOWTO/C++-dlopen/index.html)
 
