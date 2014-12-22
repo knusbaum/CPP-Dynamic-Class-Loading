@@ -1,15 +1,17 @@
 
 template <class T>
 DLClass<T>::DLClass(std::string module_name) :
-    module(module_name){}
-
-template <class T>
-DLClass<T>::~DLClass() {
-    close_module();
+    module(module_name){
+    shared = std::make_shared<shared_obj>();
 }
 
 template <class T>
-void DLClass<T>::close_module() {
+DLClass<T>::~DLClass() {
+    //close_module();
+}
+
+template <class T>
+void DLClass<T>::shared_obj::close_module() {
     if(dll_handle) {
         dlclose(dll_handle);
         dll_handle = NULL;
@@ -19,8 +21,8 @@ void DLClass<T>::close_module() {
 }
 
 template <class T>
-bool DLClass<T>::open_module() {
-
+bool DLClass<T>::shared_obj::open_module(std::string module) {
+    
     dll_handle = dlopen(module.c_str(), RTLD_LAZY);
 
     if(!dll_handle) {
@@ -52,12 +54,20 @@ bool DLClass<T>::open_module() {
 
 template <class T> template< typename... Args>
 std::shared_ptr<T> DLClass<T>::make_obj(Args... args) {
-    if(!create || !destroy) {
-        if(!open_module()) {
+    if(!shared->create || !shared->destroy) {
+        if(!shared->open_module(module)) {
             return std::shared_ptr<T>(NULL);
         }
     }
 
 //    auto create_args = ((T* (*)(Args...))create);    
-    return std::shared_ptr<T>(create(args...), destroy);
+    std::shared_ptr<shared_obj> my_shared = shared;
+    return std::shared_ptr<T>(shared->create(args...),
+                              [my_shared](T* p){ my_shared->destroy(p); });
+}
+
+
+template <class T>
+DLClass<T>::shared_obj::~shared_obj() {
+    close_module();
 }
