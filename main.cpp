@@ -10,7 +10,7 @@ int main(void) {
     
     int x = 5;
     std::shared_ptr<Polygon> triangle = dlTriangle.make_obj(3);
-    std::shared_ptr<Polygon> square = dlSquare.make_obj(5);
+    std::shared_ptr<Polygon> square = dlSquare.make_obj(x);
     
     if(!triangle) {
         std::cerr << "Failed to instantiate a triangle." << std::endl;
